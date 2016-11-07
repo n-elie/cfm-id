@@ -62,12 +62,13 @@ int main(int argc, char *argv[])
 	bool to_stdout = true;
 	int do_annotate = 0;
 	int apply_postprocessing = 1;
+	int suppress_exceptions = 0;
 	std::string output_filename;
 	std::string param_filename = "param_output.log";
 	std::string config_filename = "param_config.txt";
 	double prob_thresh_for_prune = 0.001;
 
-	if (argc != 6 && argc != 2 && argc != 5 && argc != 3 && argc != 7 && argc != 8)
+	if (argc != 6 && argc != 2 && argc != 5 && argc != 3 && argc != 7 && argc != 8 && argc != 9)
 	{
 		std::cout << std::endl << std::endl;
 		std::cout << std::endl << "Usage: cfm-predict.exe <input_smiles_or_inchi> <prob_thresh_for_prune> <param_filename> <config_filename> <include_annotations> <output_filename> <apply_post_processing>" << std::endl << std::endl << std::endl;
@@ -77,7 +78,8 @@ int main(int argc, char *argv[])
 		std::cout << std::endl << "config_filename (opt):" << std::endl << "The filename where the configuration parameters of the cfm model can be found (if not given, assumes param_config.txt in current directory)" << std::endl;
 		std::cout << std::endl << "include_annotations (opt):" << std::endl << "Whether to include fragment information in the output spectra (0 = NO (default), 1 = YES ). Note: ignored for msp/mgf output." << std::endl;
 		std::cout << std::endl << "output_filename_or_dir (opt):" << std::endl << "The filename of the output spectra file to write to (if not given, prints to stdout), OR directory if multiple smiles inputs are given (else current directory) OR msp or mgf file." << std::endl;
-		std::cout << std::endl << "apply_postprocessing (opt):" << std::endl << "Whether or not to post-process predicted spectra to take the top 80% of energy (at least 5 peaks), or the highest 30 peaks (whichever comes first) (0 = OFF, 1 = ON (default))." << std::endl;
+		std::cout << std::endl << "apply_postprocessing (opt):" << std::endl << "Whether or not to post-process predicted spectra to take the top 80% of energy (at least 5 peaks), or the highest 30 peaks (whichever comes first) (0 = OFF, 1 = ON (default) )." << std::endl;
+		std::cout << std::endl << "suppress_exception (opt):" << std::endl << "Suppress exceptions so that the program returns normally even when it fails to produce a result (0 = OFF (default), 1 = ON)." << std::endl;
 		exit(1);
 	}
 	
@@ -104,12 +106,19 @@ int main(int argc, char *argv[])
 		output_filename = argv[6];
 		to_stdout = false;
 	}
-	if( argc == 8 ){ 
+	if( argc >= 8 ){ 
 		try{ apply_postprocessing = boost::lexical_cast<bool>(argv[7]); }
 		catch(boost::bad_lexical_cast e){
 			std::cout << "Invalid apply_postprocessing (Must be 0 or 1): " << argv[7] << std::endl;
 			exit(1);
 		}
+	}
+	if( argc == 9 ){
+		try{ suppress_exceptions = boost::lexical_cast<bool>(argv[8]); }
+		catch(boost::bad_lexical_cast e){
+			std::cout << "Invalid suppress_exceptions (Must be 0 or 1): " << argv[8] << std::endl;
+			exit(1);
+		}	
 	}
 
 	//Initialise model configuration
@@ -154,7 +163,7 @@ int main(int argc, char *argv[])
 	std::vector<MolData> data;
 	bool batch_run = false;
 	std::string output_dir_str = "";
-	if( input_smiles_or_inchi.substr( input_smiles_or_inchi.size() - 4 ).compare(".txt") == 0 ){
+	if( input_smiles_or_inchi.size() > 4 && input_smiles_or_inchi.substr( input_smiles_or_inchi.size() - 4 ).compare(".txt") == 0 ){
 		parseInputFile( data, input_smiles_or_inchi, &cfg );
 		batch_run = true;
 		if( !to_stdout && output_mode == NO_OUTPUT_MODE ){
@@ -179,27 +188,26 @@ int main(int argc, char *argv[])
 			it->computeLikelyFragmentGraphAndSetThetas(*fgen, prob_thresh_for_prune, do_annotate);
 
 			//Predict the spectra (and post-process, use existing thetas)
-			std::cout << apply_postprocessing << std::endl;
 			it->computePredictedSpectra( *param, apply_postprocessing, true );
 		}
 		catch( RDKit::MolSanitizeException e ){
 			std::cout << "Could not sanitize input: " << it->getSmilesOrInchi() << std::endl;
-			if(!batch_run) throw SpectrumPredictionException("RDKit could not sanitize input: " + it->getSmilesOrInchi());
+			if(!batch_run && !suppress_exceptions) throw SpectrumPredictionException("RDKit could not sanitize input: " + it->getSmilesOrInchi());
 			continue;
 		}
 		catch( RDKit::SmilesParseException pe ){
 			std::cout << "Could not parse input: " << it->getSmilesOrInchi() << std::endl;
-			if(!batch_run) throw SpectrumPredictionException("RDKit could not parse input: " + it->getSmilesOrInchi());
+			if(!batch_run && !suppress_exceptions) throw SpectrumPredictionException("RDKit could not parse input: " + it->getSmilesOrInchi());
 			continue;
 		}
 		catch( FragmentGraphGenerationException ge ){
 			std::cout << "Could not compute fragmentation graph for input: " << it->getSmilesOrInchi() << std::endl;
-			if(!batch_run) throw SpectrumPredictionException("Could not compute fragmentation graph for input: " + it->getSmilesOrInchi());
+			if(!batch_run && !suppress_exceptions) throw SpectrumPredictionException("Could not compute fragmentation graph for input: " + it->getSmilesOrInchi());
 			continue;
 		}
 		catch( IonizationException ie ){
 			std::cout << "Could not ionize: " << it->getSmilesOrInchi() << std::endl;		
-			if(!batch_run) throw IonizationException();
+			if(!batch_run && !suppress_exceptions) throw IonizationException();
 			continue;
 		}
 

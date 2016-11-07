@@ -83,10 +83,10 @@ void Spectrum::quantisePeaksByMass( int num_dec_places ){
 	//Combine peaks that have the same mass when reduced to num_dec_places
 	//Note: this is mostly used for extreme cases like the NIST data, where masses are given only to integer precision.
 	normalizeAndSort();
-	int prev_mass = -1;
+	long long prev_mass = 0;
 	std::vector<Peak>::iterator it = peaks.begin();
 	for( ; it != peaks.end(); ++it ){
-		int tmp_mass = (int)(it->mass * std::pow(10.0, num_dec_places) + 0.5);
+		long long tmp_mass = (long long)(it->mass * std::pow(10.0, num_dec_places) + 0.5);
 		it->mass = tmp_mass*std::pow(10.0, -num_dec_places);
 		if( tmp_mass == prev_mass ){ 
 			it->intensity += (it-1)->intensity;

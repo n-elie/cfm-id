@@ -483,8 +483,10 @@ void MolData::computePredictedSpectra( Param &param, bool postprocess, bool use_
 
 	if( postprocess ) postprocessPredictedSpectra();
 	else{
-		for( unsigned int energy = 0; energy < cfg->spectrum_depths.size(); energy++ )
+		for( unsigned int energy = 0; energy < cfg->spectrum_depths.size(); energy++ ){
 			predicted_spectra[energy].normalizeAndSort();
+			predicted_spectra[energy].quantisePeaksByMass(10);
+		}
 	}
 }
 
@@ -519,8 +521,10 @@ void MolData::computePredictedSingleEnergySpectra( Param &param, bool postproces
 
 	if( postprocess ) postprocessPredictedSpectra();
 	else{
-		for( unsigned int energy = 0; energy < cfg->spectrum_depths.size(); energy++ )
+		for( unsigned int energy = 0; energy < cfg->spectrum_depths.size(); energy++ ){
 			predicted_spectra[energy].normalizeAndSort();
+			predicted_spectra[energy].quantisePeaksByMass(10);
+		}
 	}
 }
 
@@ -701,6 +705,7 @@ void MolData::postprocessPredictedSpectra(double perc_thresh, int min_peaks, int
 	
 	std::vector<Spectrum>::iterator it = predicted_spectra.begin();
 	for( ; it != predicted_spectra.end(); ++it){
+		it->quantisePeaksByMass(10);	
 		it->postProcess( perc_thresh, min_peaks, max_peaks );
 		it->normalizeAndSort();
 		it->sortAndNormalizeAnnotations();
