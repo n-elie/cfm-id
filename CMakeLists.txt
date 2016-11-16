@@ -101,4 +101,7 @@ add_subdirectory( cfm-id )
 #Annotater
 add_subdirectory( cfm-annotate )
 
+#Compute Statistics (for computed spectra)
+add_subdirectory( compute-stats )
+
 add_subdirectory( cfm-id-precomputed )

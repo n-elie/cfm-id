@@ -203,7 +203,8 @@ void Spectrum::sortAndNormalizeAnnotations(){
 		std::vector<annotation_t>::iterator itt = it->annotations.begin();
 		double total = 0.0;
 		for( ; itt != it->annotations.end(); ++itt ) total += itt->second;
-		double norm = it->intensity/(100.0*total);
+		double norm = 1.0;
+		if( total > 0.0) norm = it->intensity/(100.0*total);
 		for( itt = it->annotations.begin(); itt != it->annotations.end(); ++itt ) 
 			itt->second *= norm;
 	}

@@ -719,6 +719,13 @@ void MolData::quantisePredictedSpectra(int num_dec_places){
 		it->quantisePeaksByMass(num_dec_places);
 }
 
+void MolData::quantiseMeasuredSpectra(int num_dec_places){
+	
+	std::vector<Spectrum>::iterator it = spectra.begin();
+	for( ; it != spectra.end(); ++it)
+		it->quantisePeaksByMass(num_dec_places);
+}
+
 MolData::~MolData(){
 
 	if( graph_computed ) delete fg;

@@ -107,6 +107,7 @@ public:
 
 	void postprocessPredictedSpectra(double perc_thresh = 80.0, int min_peaks = 5, int max_peaks = 30);
 	void quantisePredictedSpectra(int num_dec_places);
+	void quantiseMeasuredSpectra(int num_dec_places);
 
 	//Function to compute a much reduced fragment graph containing only those
 	//fragmentations as actually occur in the spectra, based on a computed set of beliefs
