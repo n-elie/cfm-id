@@ -182,11 +182,13 @@ int MILP::runSolver( std::vector<int> &output_bmax, bool allow_lp_q, int max_fre
 		if( fragidx != fragmentidx ) continue;
 
 		//Base valence constraints
-		RDKit::ROMol::OBOND_ITER_PAIR ip = mol->getAtomBonds( atom );
-		RDKit::ROMol::OEDGE_ITER it = ip.first;
+                RDKit::ROMol::OEDGE_ITER cbond_beg,cbond_end;
+		boost::tie(cbond_beg, cbond_end) = mol->getAtomBonds( atom );
+		//RDKit::ROMol::OEDGE_ITER it = ip.first;
 		int j = 0; if( hloss_allowed ) j = 1;
-		for( ; it != ip.second; ++it ){
-			RDKit::Bond *cbond =(*mol)[*it].get();
+                for ( ; cbond_beg != cbond_end; ++cbond_beg ){
+		//for( ; it != ip.second; ++it ){
+			RDKit::Bond *cbond =(*mol)[*cbond_beg];
 			int cbond_broken; cbond->getProp("Broken", cbond_broken);
 			if(cbond_broken) continue;
 
@@ -297,11 +299,10 @@ int MILP::runSolver( std::vector<int> &output_bmax, bool allow_lp_q, int max_fre
 //Helper function - allows traversal of a ring one bond at a time
 RDKit::Bond *MILP::getNextBondInRing( RDKit::Bond *bond, RDKit::Atom *atom, std::vector<int> &ring_bond_flags){
 
-	RDKit::ROMol::OBOND_ITER_PAIR ip;
-	ip = atom->getOwningMol().getAtomBonds( atom );
-	RDKit::ROMol::OEDGE_ITER it = ip.first;
-	for( ; it != ip.second; ++it ){
-		int idx = (*mol)[*it].get()->getIdx();	//There must be a better way...
+	RDKit::ROMol::OEDGE_ITER beg_abond, beg_aend;
+	boost::tie(beg_abond, beg_aend)= atom->getOwningMol().getAtomBonds( atom );
+	for( ; beg_abond != beg_aend; ++beg_abond ){
+		int idx = (*mol)[*beg_aend]->getIdx();	//There must be a better way...
 		if( ring_bond_flags[idx] && idx != bond->getIdx() )
 			return atom->getOwningMol().getBondWithIdx(idx);
 	}
