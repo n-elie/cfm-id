@@ -205,6 +205,7 @@ int MILP::runSolver( std::vector<int> &output_bmax, bool allow_lp_q, int max_fre
 				row[j++] = 1;			
 			}			
 		}
+
 		if( j > 0 ){
 			int val_limit = origval;
 			if( atom->getDegree() > origval )  val_limit = atom->getDegree();
@@ -299,10 +300,10 @@ int MILP::runSolver( std::vector<int> &output_bmax, bool allow_lp_q, int max_fre
 //Helper function - allows traversal of a ring one bond at a time
 RDKit::Bond *MILP::getNextBondInRing( RDKit::Bond *bond, RDKit::Atom *atom, std::vector<int> &ring_bond_flags){
 
-	RDKit::ROMol::OEDGE_ITER beg_abond, beg_aend;
-	boost::tie(beg_abond, beg_aend)= atom->getOwningMol().getAtomBonds( atom );
-	for( ; beg_abond != beg_aend; ++beg_abond ){
-		int idx = (*mol)[*beg_aend]->getIdx();	//There must be a better way...
+	RDKit::ROMol::OEDGE_ITER beg_abond, end_abond;
+	boost::tie(beg_abond, end_abond)= atom->getOwningMol().getAtomBonds( atom );
+	for( ; beg_abond != end_abond; ++beg_abond ){
+		int idx = (*mol)[*beg_abond]->getIdx();
 		if( ring_bond_flags[idx] && idx != bond->getIdx() )
 			return atom->getOwningMol().getBondWithIdx(idx);
 	}
